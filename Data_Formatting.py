@@ -1,8 +1,8 @@
 from openai import OpenAI
 from flask import Flask, request, jsonify, render_template
 import os
+from dotenv import load_dotenv, dotenv_values
 import spacy
-import numpy as np
 import warnings
 
 # gensim: simple_preprocess for easy tokenization & convert to a python list;
@@ -28,15 +28,15 @@ from nltk.corpus import stopwords
 warnings.filterwarnings("ignore")
 nlp = spacy.load("en_core_web_sm")
 
-open_AI_key = os.environ.get("OPENAI")
-client = OpenAI(api_key=open_AI_key)
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI"))
 
 app = Flask(__name__)
 
 
-@app.route('/')
-def home():
-    return render_template("index.html")
+# @app.route('/')
+# def home():
+#     return render_template("index.html")
 
 
 @app.route('/ask', methods=['POST'])
