@@ -1,9 +1,9 @@
 FROM python:3.9
 
-ADD Data_Formatting.py .
-ADD requirements.txt .
-ADD README.md .
-ADD .env .
+COPY Data_Formatting.py .
+COPY requirements.txt .
+COPY README.md .
+COPY .env .
 
 RUN pip install -r requirements.txt
 RUN python -m nltk.downloader wordnet

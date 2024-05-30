@@ -62,31 +62,32 @@ def ai_response():
 def extract_structured_data(text):
     data = [text]
 
-    # Remove Emails, web links
-    data = [re.sub('\S*@\S*\s?', '', sent) for sent in data]  # Remove new line characters
-    data = [re.sub('\s+', ' ', sent) for sent in data]  # Remove distracting single quotes
-    data = [re.sub("\'", '', sent) for sent in data]  # Gensim simple_preprocess function can be your friend with tokenization
+    # Remove newline characters single quotes nad other characters
+    data = [re.sub('\S*@\S*\s?', '', sent) for sent in data]
+    data = [re.sub('\s+', ' ', sent) for sent in data]
+    data = [re.sub("\'", '', sent) for sent in data]
 
+    # Split text by words
     def sent_to_words(sentences):
         for sentence in sentences:
-            yield gensim.utils.simple_preprocess(str(sentence), deacc=True)  # deacc=True removes punctuations
+            yield gensim.utils.simple_preprocess(str(sentence), deacc=True)
 
     data_words = list(sent_to_words(data))
     print(data_words)
 
-    # Gensim stopwords list
+    # Create stopword list (prepositions etc.)
     stop_words = st.words('english')
-    # Expand by adding NLTK stopwords list
     stop_words.append(stopwords.words('english'))
-    # extend stopwords by your choices
-    stop_words.extend(['https', 'co', 'dont'] + list(swords))  # Put that in a function
+    stop_words.extend(['dont'] + list(swords))  # Add custom stopwords
 
+    # Remove stopwords from text
     def remove_stopwords(texts):
         return [[word for word in simple_preprocess(str(doc)) if word not in stop_words] for doc in texts]
 
     data_words_nostops = remove_stopwords(data_words)
     print(data_words_nostops)
 
+    # Convert words to its dictionary form (lemmatization)
     def get_wordnet_pos(word):
         tag = nltk.pos_tag([word])[0][1][0].upper()
         tag_dict = {"J": wordnet.ADJ,
@@ -95,7 +96,7 @@ def extract_structured_data(text):
                     "R": wordnet.ADV}
         return tag_dict.get(tag, wordnet.NOUN)
 
-    # Take the POS tag and use NLTK lemmatizer to apply lemmatization
+    # Lemmatize words
     def lemmatize(texts):
         return [
             [WordNetLemmatizer().lemmatize(word, pos=get_wordnet_pos(word)) for word in simple_preprocess(str(doc)) if
@@ -103,11 +104,12 @@ def extract_structured_data(text):
 
     data_lemmatized = lemmatize(data_words_nostops)
     print(data_lemmatized)
-    flat_data = [x for xs in data_lemmatized for x in xs]
 
+    flat_data = [x for xs in data_lemmatized for x in xs]
     doc = nlp(flat_data)
 
-    # Extrahovat popis vzhledu
+    # Sort data to JSON file
+    # Appearance
     appearance = ""
     for token in doc:
         if token.text.lower() == "creature" and token.dep_ == "attr":
@@ -117,14 +119,14 @@ def extract_structured_data(text):
             break
     data["appearance"] = appearance
 
-    # Extrahovat schopnosti a útoky
+    # Abilities
     abilities = []
     for token in doc:
         if token.text in ["Thunderbolt", "Thunder Shock"]:
             abilities.append(token.text)
     data["abilities"] = abilities
 
-    # Další informace
+    # Other attributes
     data["role"] = "mascot" if "mascot" in text.lower() else ""
     data["popularity"] = "popular worldwide" if "popular worldwide" in text.lower() else ""
 
